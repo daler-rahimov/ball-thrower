@@ -1,0 +1,74 @@
+#!/bin/bash
+#set -e # fail on any error
+#set -u # treat unset variables as errors
+
+# ======[ Trap Errors ]======#
+#set -E # let shell functions inherit ERR trap
+
+# Trap non-normal exit signals:
+# 1/HUP, 2/INT, 3/QUIT, 15/TERM, ERR
+#trap err_handler 1 2 3 15 ERR
+#function err_handler {
+#	local exit_status=${1:-$?}
+#	logger -s -p "syslog.err" -t "dc-nginx.deb" "dc-nginx.deb script '$0' error code $exit_status (line $BASH_LINENO: '$BASH_COMMAND')"
+#	exit $exit_status
+#}
+
+#set -e 
+set -x 
+
+TDS=/opt/ball-thrower/bin/
+serial_name=$( ls /dev/serial/by-path/ | sort -n | head -1 )
+if [ -f "$serial_name" ]; then
+	serial_port_path=/dev/serial/by-path/$serial_name
+else
+	serial_port_path=/dev/ttyS5 # this is default for UP^2 board with DC image 
+fi 
+
+cd $TDS 
+cd ..
+echo $serial_port_path > serial_port_path   
+chmod 777 serial_port_path 
+
+
+if  [ -z "$serial_port_path" ] 
+then 
+	>&2 echo "error: There is no serial device connected"
+	exit 2
+fi
+
+# install core arduino 
+sudo $TDS/arduino-cli core update-index
+sudo $TDS/arduino-cli core install arduino:avr # this is for Uno/Mega/Nano/Duemilanove
+
+# install RPi GPI for UP^2 
+cd $TDS/misc/RPi.GPIO/
+python setup.py install 
+
+# installing arduino reset. This is used to set arudino to upload mode 
+cp $TDS/misc/avrdude-rpi/autoreset /usr/bin/
+cp $TDS/misc/avrdude-rpi/arduino-cli-with-reset /usr/bin/ 
+
+#try nano old board 
+sudo timeout 10 arduino-cli-with-reset upload -p $serial_port_path --fqbn arduino:avr:nano:cpu=atmega328old $TDS/ballThrower/
+rc_nano_old=$?
+if [[ $rc_nano_old == 0 ]]; then exit 0; fi 
+
+#try mega board 
+sudo timeout 10 arduino-cli-with-reset upload -p $serial_port_path --fqbn arduino:avr:mega $TDS/ballThrower/ 
+rc_mega=$?
+if [[ $rc_mega == 0 ]]; then exit 0; fi
+
+#try nano board  
+sudo timeout 10 arduino-cli-with-reset upload -p $serial_port_path --fqbn arduino:avr:nano $TDS/ballThrower/
+rc_nano=$?
+if [[ $rc_nano == 0 ]]; then exit 0; fi 
+
+# check upload worked to any board 
+if [[ $rc_mega != 0 && $rc_nano != 0 && $rc_nano != 0 ]]; 
+then
+	>&2 echo "error: Could NOT upload to any bord"
+	exit 1
+if 
+
+exit 0

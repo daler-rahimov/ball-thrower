@@ -1,0 +1,79 @@
+#!/bin/bash
+
+set -e # fail on any error 
+
+if [ ! -f /usr/bin/dpkg-shlibdeps ]; then
+    echo "error: not found dpkg-shlibdeps"
+    echo
+    echo "sudo apt-get install dpkg-dev"
+    exit -1
+fi
+
+PACKAGE=ball-thrower
+DEST_PKG=".."
+
+
+if [ -z "${BUILD_ARTIFACTSTAGINGDIRECTORY}" ]
+then
+    BUILD_ARTIFACTSTAGINGDIRECTORY=$DEST_PKG
+fi
+
+
+WD=`pwd`
+TD=$WD/tmp-build
+TDS=$TD/src/opt/ball-thrower/bin
+rm -fR $TD
+mkdir -p $TD
+
+if [ -z "${BUILD_BUILDID}" ]
+then
+    BUILD_BUILDID="00-local"
+fi
+
+
+cp -r ./src $TD/
+VER=`cat ./ver | sed "s/%BUILDID%/${BUILD_BUILDID}/"`
+cat $TD/src/DEBIAN/control | sed "s/PVER/${VER}/g" > $TD/src/DEBIAN/control.x
+
+# ARDUINO compile 
+cd $WD
+cd ../
+mkdir -p ~/Arduino/
+cp -r libraries/ ~/Arduino/
+ls ~/Arduino/
+./arduino-cli core update-index
+./arduino-cli core install arduino:avr # this is for Uno/Mega/Nano/Duemilanove 
+./arduino-cli core update-index
+./arduino-cli compile --fqbn arduino:avr:mega ballThrower # compile for mega board 
+./arduino-cli compile --fqbn arduino:avr:nano:cpu=atmega328old ballThrower/ # compile for nano old  
+./arduino-cli compile --fqbn arduino:avr:nano ballThrower/ # compile for nano 
+
+# add arduino_cli
+cd $WD
+cd ../
+cp -r ballThrower/ $TDS
+cp arduino-cli $TDS
+
+# add misc tools 
+cp -r misc $TDS  
+
+mkdir -p $TD/debian
+cp $TD/src/DEBIAN/control.x $TD/debian/control
+cd $TD
+#dpkg-shlibdeps $TD/arduino-cli $TD/ballThrower/ballThrower.arduino.avr.mega.with_bootloader.hex
+
+DEPS=`cat debian/substvars | sed 's/shlibs:Depends=//g'`
+echo $DEPS
+
+cat debian/control | sed "s/\${shlibs:Depends}/$DEPS/g" | awk '/Package:/{i++}i' > $TD/src/DEBIAN/control
+rm -f $TD/src/DEBIAN/control.x
+chmod 775 $TD/src/DEBIAN/postinst $TD/src/DEBIAN/postrm $TD/src/DEBIAN/prerm
+
+cd $WD
+
+dpkg-architecture > $TD/dev-env
+. $TD/dev-env
+ARCH="$DEB_BUILD_ARCH"
+
+cd $WD
+dpkg-deb -b $TD/src ${BUILD_ARTIFACTSTAGINGDIRECTORY}/${PACKAGE}_${VER}_${ARCH}.deb

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#case $1 in
+#    remove)
+#   
+#	rm -rf /opt/lpa2/
+#        ;;
+#    *)
+#        ;;
+#esac

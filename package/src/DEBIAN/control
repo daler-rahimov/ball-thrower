@@ -1,0 +1,16 @@
+Source: ball-thrower
+Section: misc
+Priority: optional
+Maintainer: D.Rahimov <dimadaler@gmail.com>
+Build-Depends: debhelper (>=9),autotools-dev
+Standards-Version: 3.9.8
+
+Package: ball-thrower
+Version: PVER
+Section: misc
+Architecture: amd64
+Priority: optional
+Essential: no
+Maintainer: D.Rahimov <dimadaler@gmail.com> 
+Description: Tennis Ball Thrower
+

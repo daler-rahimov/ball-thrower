@@ -1,0 +1,35 @@
+#!/usr/bin/python
+
+import RPi.GPIO as GPIO
+import sys, os, re, time, fcntl
+
+fd = sys.stdin.fileno()
+fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+dtr = re.compile('.+TIOCM_DTR.+')
+start = time.time()
+
+def reset():
+  pin = 24 
+  GPIO.setup(pin, GPIO.OUT)
+  GPIO.output(pin, GPIO.LOW)
+  time.sleep(0.15)
+  GPIO.output(pin, GPIO.HIGH)
+
+def process():
+  while True:
+    try:
+      duration = time.time() - start
+      input = sys.stdin.readline().strip()
+      reset()
+      return
+    except:
+      continue
+
+process()
+GPIO.cleanup()
+print "done with autoreset - ignore Broken pipe errors if Done uploading"
+exit
