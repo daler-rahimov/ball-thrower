@@ -31,6 +31,19 @@ void Thrower::setShotPower(double shotPowerPersentile = 1.0){
 	ballMotorPower = ballMotorPower * shotPowerPersentile;
 }
 
+
+double Thrower::getShotPower(){
+	return shotPowerInPersentile;
+}
+
+void Thrower::setSpin(double spinPersentile = 0.0){
+	// TODO: impement it 
+}
+
+double Thrower::getSpin(){
+	// TODO: impement it 
+}
+
 void Thrower::stopShot(){
 	_downMotorThrower->stop();
 	_upMotorThrower->stop();

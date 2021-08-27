@@ -64,6 +64,21 @@ public:
 		@brief Set power of all the shots given in presentile e.g. 50% 0.5 
 	*/
 	void setShotPower(double shotPowerPersentile = 1.0);
+	
+	/*!
+		@brief Get power of all the shots returned in presentile e.g. 50% 0.5 
+	*/
+	double getShotPower();
+
+	/*!
+		@brief Set spin given in presentile from -1.0(max backspin) to +1.0 (max top spin)
+	*/
+	void setSpin(double spinPersentile = 0.0);
+	
+	/*!
+		@brief Get spin returned in presentile from -1.0(max backspin) to +1.0 (max top spin)
+	*/
+	double getSpin();
 
 private:
 	Motor *_downMotorThrower;

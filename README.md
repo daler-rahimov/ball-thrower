@@ -1,11 +1,9 @@
 
 
 # AT Commands 
-
 -----------------
-NOTE:**Any mode plays for 1 min. After than it switches to waiting mode.**  
 
-### Serial properties
+## Serial properties
 BoudRate = 115200
 Parity 	 = None 
 DataBits = 8 
@@ -16,65 +14,47 @@ Handshake= None
 ### Computer parameter type commands:
 ```SOH|CMD|ETX``` 
 
-NOTE: computer parameter type commands are exactly 4 byes. 2 for start/end 2 for commands.
-and returns exactly 1 byte. 
-
 Where 
 	SOH is a control-A character (ASCII 01).
 	ETX to be a Control-C chracter (ASCII 01). 
 
-	CMD is 2 bytes character (ASCII).: 
-		1st byte - command name. E.g m for mode 
-		2nd byte - command number. 
+	CMD is 3 bytes character (ASCII).: 
+		1st byte - command prefix. E.g 'g'-for get and 's'-for set  
+		2nd byte - command name. E.g. 'p'- for shot power. Anything for other (e.g. version)
+		3rd bype - command value. E.g. '100'- 100% 	
 
 E.g. 
-```SOH|m2|ETX``` -	Set mode to 2 
+```SOH|sm2|ETX``` -	Set mode to 2 
 ```SOH|v0|ETX``` - get version number  
 
 For RealTerm 
-```0x01 0x6d 0x07 0x03``` 
+<!-- ```0x01 0x6d 0x07 0x03```  -->
 0x07 is the mode number 
-
-### Display parameter type commands: 
-
-```AT+CMD<CR>```
- 
-Where 
-		AT  is the command line prefix, 
-		MD is the body of a basic command 
-		<CR>  is  the  command  line  terminator character (New line \n)
-	 
-```AT+CMD=10<CR>``` 
-
-Where 
-		10 is a subparameter
 
 
 #### Commands 
-AT+M<Num>	Set mode to <Num> 
-AT+V        Get version
+cmds are **Case sensetive**
+`SOH+CMD+ETX`
+```
+CDMs: 
+v	        		Get version. 
+sm<mode_num>		Set mode to <mode_num> 
+ss<spin>			Set spin in presentage from -100 (100% backspin) +100 (100% topspin). <spin> in **BYTE**
+sp<shot_power>		Set shot power (0 to 100 persentage). <shot_power> in **BYTE**
+gs					Get spin from -100 (100% backspin) +100 (100% topspin).
+gp					Get shot power (0 to 100 persentage). 
+```
+
 List of Modes
 ```
-		GREETING_MODE =		 	 1,
-		BOOTING_MODE =			 2,
-		WAITING_MODE =			 3,
-		LISTENING_MODE =		 4,
-		PROCESSING_MODE =		 5,
-		SETUP_MODE =			 6,
-		TALKING_MODE =			 7,
-		ACTIVE_MODE =			 8,
-		ALERT_MODE =			 9,
-		ERROR_MODE =			 10,
-		SUCCESS_MODE =			 11,
-		UPDATING_MODE =			 12,
-		FACE_REGISTRATION_MODE = 13,
-		ACTION_REQUIRED_MODE =	 14,
-		LEVEL_MODE =			 15,
-		MUTED_MODE =			 16,
-		WAITING_MODE2 =			 17,
-		TALKING_MODE_NEGATIVE =  18,
-		TALKING_MODE_POSITIVE =	 19,
-		INTERMEDIATE_MODE =		 20, 
+		FLAT_SHOT =		 		 1,
+		TOPSPIN_SHOT =			 2,
+		DROP_SHOT =				 3,
+		PASSING_SHOT =			 4,
+		SLICE_SHOT =			 5,
+		LOB_SHOT =			 	 6,
+		SERVE_SHOT =			 7,
+		STOP_SHOT = 			 8, 
 
 ```
 

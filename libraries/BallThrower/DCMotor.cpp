@@ -47,12 +47,12 @@ void DCMotor::stop() {
 void DCMotor::setSpeed(uint8_t speed) {
 	if (speed <= currentSpeed) {
 		currentSpeed = speed;
-		analogWrite(pwm, currentSpeed);
+		analogWriteNoInterrupts(pwm, currentSpeed);
 	}
 	else { // speed up slowly so motor does not staul
 		for (int i = currentSpeed; i <= speed; i++)
 		{
-			analogWrite(pwm, i);
+			analogWriteNoInterrupts(pwm, i);
 			delay(20);
 		}
 		currentSpeed = speed;
@@ -60,5 +60,12 @@ void DCMotor::setSpeed(uint8_t speed) {
 }
 
 void DCMotor::run() {
-	analogWrite(pwm, currentSpeed);
+	analogWriteNoInterrupts(pwm, currentSpeed);
 }
+
+void DCMotor::analogWriteNoInterrupts(uint8_t pin, int val){
+	noInterrupts();
+	analogWrite(pwm, currentSpeed);
+	interrupts();
+}
+

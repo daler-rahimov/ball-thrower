@@ -39,6 +39,7 @@ public:
 	void setDirection(bool isForward);
 	void stop();
 	void run();
+	void analogWriteNoInterrupts(uint8_t pin, int val);
 
 private:
 	uint8_t pwm;

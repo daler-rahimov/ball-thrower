@@ -11,9 +11,8 @@
 #define BOUD_RATE 115200
 
 // Motors 
+const double SHOTPOWER_PRESENTILE = 0.07; // Power of all shots 
 // motor one
-const double SHOTPOWER_PRESENTILE = 0.11; // Power of all shots 
-
 const uint8_t PWM_UP_MOTOR = 3;
 const uint8_t DIR_UP_MOTOR1 = A0;
 const uint8_t DIR_UP_MOTOR2 = A1;
@@ -21,15 +20,18 @@ const uint8_t DIR_UP_MOTOR2 = A1;
 const uint8_t PWM_DOWN_MOTOR = 4;
 const uint8_t DIR_DOWN_MOTOR1 = A4;
 const uint8_t DIR_DOWN_MOTOR2 = A5;
-// Thrower 
+
 Thrower *thrower;
 
 // Computer cmds defines 
-#define CMD_LENTH	4
 #define CMD_SOH		0x01 
 #define CMD_ETX		0x03
-#define CMD_CAHR_ID	1			//command char ID e.g. 'SOH|m2|ETX` id of 'm' 
-#define CMD_NUM_ID	2			//command's num ID e.g. 'SOH|m2|ETX` id of '2'
+const char CMD_PER_SET  = 	's';
+const char CMD_PER_GET  =	'g';
+const char CMD_PER_VER  = 	'v';
+const char CMD_PER_MODE =	'm';
+const char CMD_PER_SPIN = 	's';
+const char CMD_PER_POWER=	'p';
 
 // Result code defines 
 // NOTE: Do nat change the current order clients depend on it. Add new ones at the end 
@@ -41,16 +43,17 @@ const byte PARTIAL_CMD =	 4;
 const byte MODE_NOT_SET =	 5;
 const byte NO_SUCH_CMD  =	 6;
 const byte NO_IMPLEMENT =	 7;
+const byte CMD_INC_VALUE=	 8;
 
 //Version 
 const char MAJOR =	'1';
 const char MINOR =	'0';
-char verC[] = { MAJOR,MINOR,0 };
+const char PATCH =	'0';
+char verC[] = { MAJOR, MINOR, PATCH };
 byte verByte = atoi(verC);
 
 // ballThrower 
-String g_serial_buf;
-Thrower::Constants nextCmd = Thrower::E_Last;
+Thrower::Constants nextMode = Thrower::E_Last;
 
 unsigned long time_now = 0;
 int period = 5;// period that is used to check if there is a new commands to execute 
@@ -60,11 +63,9 @@ void setup()
 {
 	Serial.begin(BOUD_RATE);
 	Serial.setTimeout(100);
-    // Changed frequency on Pin 3
-    // pinMode(3, 155);
-    // TCCR2B = TCCR2B & B11111000 | B00000001; // for PWM frequency of 31372.55 Hz
-    //setPwmFrequency(PWM_DOWN_MOTOR, 8);
-    //setPwmFrequency(PWM_UP_MOTOR, 8);
+    // Changed frequency 
+    setPwmFrequency(PWM_DOWN_MOTOR, 8);
+    setPwmFrequency(PWM_UP_MOTOR, 8);
 
     // set all the motor control pins to outputs
     pinMode(PWM_UP_MOTOR, OUTPUT);
@@ -83,19 +84,134 @@ void setup()
 }
 
 
+const byte CMD_LENTH = 5; // TODO : remove 
+char cmd[CMD_LENTH] = {NULL}; // all to 0 
+char nextCmd[CMD_LENTH-2] = {NULL};
+
 void loop()
 {
+	thrower->playShot();
 	checkComputerCmd();
 	thrower->playShot();
+	doNextCmd();
+}
 
-	// in some time perioud check if new cmd was issued 
-	if (millis() > time_now + period) {
-		time_now = millis();
-		if (nextCmd != Thrower::E_Last) {
-			time_last_mode_change = millis();
-			thrower->setShot(nextCmd);
-			nextCmd = Thrower::E_Last;
+/*!
+	@brief	check if there is new commands record it into nexCmd variable 
+*/
+void checkComputerCmd()
+{
+	if (Serial.available() > 0) {
+		
+		Serial.readBytes(cmd, CMD_LENTH);
+		if (cmd[0] != CMD_SOH ){
+			Serial.write(CMD_INC_FORM);
+		} else if (cmd[CMD_LENTH-1] != CMD_ETX){
+			Serial.write(PARTIAL_CMD);
+		} else {// there is data and correct format
+			nextCmd[0] = cmd[1]; 
+			nextCmd[1] = cmd[2];
+			nextCmd[2] = cmd[3]; 
 		}
+		serialFlush();
+	}
+}
+
+void doNextCmd(){
+
+	if (nextCmd[0] == NULL) 
+		return;
+	// Serial.write(nextCmd[0]);
+	char firt_c = nextCmd[0];
+	if (firt_c != CMD_PER_GET && firt_c != CMD_PER_SET && firt_c != CMD_PER_VER){
+		Serial.write(NO_SUCH_CMD);
+	} 
+	// Version 
+	else if (firt_c == 'v'){
+		Serial.write(verByte);
+	}
+	// Set cmd 
+	else if (firt_c == 's'){
+		byte res = setCmd();
+		Serial.write(res);
+	}
+	// Get 
+	else if (firt_c == 'g'){
+		byte res = getCmd();
+		Serial.write(res);
+	}
+
+	clearNextCmd();
+}
+
+/*!
+	@brief	Preform all "GET" CMDs   
+	
+	@return	result code  
+	@note	result code can go only up to 255
+*/
+byte getCmd(){
+	if (nextCmd[0] != CMD_PER_GET){// senety check 
+		return NO_SUCK_SHOT; 
+	} else if (nextCmd[1] == CMD_PER_POWER) { // Get shot power
+		double shotPowerPresentile = thrower->getShotPower();
+		byte res = (byte)(shotPowerPresentile * 100);
+		return res;
+	} else if (nextCmd[1] == CMD_PER_SPIN) { // Get spin 
+		double spinPresentile = thrower->getSpin();
+		byte res = (byte)(spinPresentile * 100);
+		return res;
+	} else {
+		return NO_SUCH_CMD;
+	}
+}
+
+/*!
+	@brief	Preform all "SET" CMDs   
+	
+	@return	result code 
+	@note	result code can go only up to 255
+*/
+byte setCmd()
+{
+	if (nextCmd[0] != CMD_PER_SET){// senety check 
+		return NO_SUCK_SHOT; 
+	} else if (nextCmd[1] == CMD_PER_MODE){// Set mode  
+		char modeCmd = nextCmd[2];
+		//check if mode exits in enum of Thrower 
+		bool cmd_in_modes = false;
+		for (Thrower::Constants mode = Thrower::E_First; mode < Thrower::E_Last;
+			mode = Thrower::Constants(mode + 1)) {
+			if (modeCmd== mode) {
+				cmd_in_modes = true;
+				break;
+			}
+		}
+		if (!cmd_in_modes) {
+			return NO_SUCK_SHOT;
+		}
+		if (!thrower->isModeImplemented(modeCmd)) {
+			return NO_IMPLEMENT;
+		}
+		//set mode 
+		nextMode = (Thrower::Constants) modeCmd;
+		thrower->setShot(nextMode);
+		return OK;
+	} else if (nextCmd[1] == CMD_PER_POWER){// Set shot power  
+		double powerPerentile = double(nextCmd[2])/100.00;
+		if (powerPerentile < 0 || powerPerentile > 1 )
+			Serial.print(powerPerentile);
+			return CMD_INC_VALUE;
+		thrower->setShotPower(powerPerentile);
+		return OK;
+	} else if (nextCmd[1] == CMD_PER_SPIN){// Set spin
+		double spinPerentile = double(nextCmd[2])/100.00;
+		if (spinPerentile < -1 || spinPerentile > 1 )
+			return CMD_INC_VALUE;
+		thrower->setSpin(spinPerentile);
+		return OK;
+	} else {
+		return NO_SUCH_CMD;
 	}
 }
 
@@ -108,79 +224,15 @@ void serialFlush() {
 	}
 }
 
-// ====================================
-//        Computer type - Commands  
-// ====================================
-
-/*!
-	@brief	check if there is new commands sent
-	and record it into nexCmd variable 
-*/
-void checkComputerCmd()
-{
-	char cmd[CMD_LENTH] = {0}; // all to 0 
-	if (Serial.available() > 0) {
-		Serial.readBytes(cmd, CMD_LENTH);
+void clearNextCmd(){
+	for (int i=0; i<CMD_LENTH-2; i++){
+		nextCmd[i] = 0;
 	}
-	else {
-		return;
-	}
-
-	// Check format 
-	if (cmd[0] != CMD_SOH) {
-		Serial.write(CMD_INC_FORM);
-		serialFlush();
-	}else if (cmd[CMD_LENTH-1] != CMD_ETX) {
-		Serial.write(PARTIAL_CMD);
-		serialFlush();
-	}
-	else if (cmd[CMD_CAHR_ID] != 'm' && cmd[CMD_CAHR_ID] != 'v') {
-		Serial.write(NO_SUCH_CMD);
-		serialFlush();
-	}
-	else {// there is data and correct format 
-		//Version 
-		if (cmd[CMD_CAHR_ID] == 'v' || cmd[CMD_CAHR_ID] == 'V') {
-			Serial.write(verByte);
-		}
-		//Commans 
-		else if (cmd[CMD_CAHR_ID] == 'm' || cmd[CMD_CAHR_ID] == 'M')
-		{
-			byte res = doCmd(cmd[CMD_NUM_ID]);
-			Serial.write(res);
-		}
-	}
-
 }
 
 /*!
-	@brief	check if issued command exits and save it in nextCmd 
-	
-	@return	result code 
-	@note	result code can go only up to 255
+	@brief	Set PWM frequency 
 */
-byte doCmd(int cmd)
-{
-	//check if mode exits in enum of EvoRing 
-	bool cmd_in_modes = false;
-	for (Thrower::Constants mode = Thrower::E_First; mode < Thrower::E_Last;
-		mode = Thrower::Constants(mode + 1)) {
-		if (cmd == mode) {
-			cmd_in_modes = true;
-			break;
-		}
-	}
-	if (!cmd_in_modes) {
-		return NO_SUCK_SHOT;
-	}
-	if (!thrower->isModeImplemented(cmd)) {
-		return NO_IMPLEMENT;
-	}
-	//set mode 
-	nextCmd = (Thrower::Constants) cmd;
-	return OK;
-}
-
 void setPwmFrequency(int pin, int divisor) {
     byte mode;
     if (pin == 5 || pin == 6 || pin == 9 || pin == 10) {
@@ -213,69 +265,3 @@ void setPwmFrequency(int pin, int divisor) {
         TCCR2B = TCCR2B & 0b11111000 | mode;
     }
 }
-
-// ====================================
-
-//Define User Types below here or use a .h file
-
-// #include <DCMotor.h>
-
-// // motor one
-// const uint8_t PWM_MOTOR1 = 3;
-// const uint8_t DIR1_MOTOR1 = A0;
-// const uint8_t DIR2_MOTOR2 = A1;
-// DCMotor* motor1;
-
-// void setup()
-// {
-//     // Changed frequency on Pin 3
-//     //pinMode(3, 155);
-//     //TCCR2B = TCCR2B & B11111000 | B00000001; // for PWM frequency of 31372.55 Hz
-//     setPwmFrequency(PWM_MOTOR1, 8);
-
-//     // set all the motor control pins to outputs
-//     pinMode(PWM_MOTOR1, OUTPUT);
-//     pinMode(DIR1_MOTOR1, OUTPUT);
-//     pinMode(DIR2_MOTOR2, OUTPUT);
-
-// 	motor1 = new DCMotor(PWM_MOTOR1, DIR1_MOTOR1, DIR2_MOTOR2);
-//     motor1->setSpeed(10);
-// }
-
-// void loop()
-// {
-//     motor1->run();
-// }
-
-// void setPwmFrequency(int pin, int divisor) {
-//     byte mode;
-//     if (pin == 5 || pin == 6 || pin == 9 || pin == 10) {
-//         switch (divisor) {
-//         case 1: mode = 0x01; break;
-//         case 8: mode = 0x02; break;
-//         case 64: mode = 0x03; break;
-//         case 256: mode = 0x04; break;
-//         case 1024: mode = 0x05; break;
-//         default: return;
-//         }
-//         if (pin == 5 || pin == 6) {
-//             TCCR0B = TCCR0B & 0b11111000 | mode;
-//         }
-//         else {
-//             TCCR1B = TCCR1B & 0b11111000 | mode;
-//         }
-//     }
-//     else if (pin == 3 || pin == 11) {
-//         switch (divisor) {
-//         case 1: mode = 0x01; break;
-//         case 8: mode = 0x02; break;
-//         case 32: mode = 0x03; break;
-//         case 64: mode = 0x04; break;
-//         case 128: mode = 0x05; break;
-//         case 256: mode = 0x06; break;
-//         case 1024: mode = 0x07; break;
-//         default: return;
-//         }
-//         TCCR2B = TCCR2B & 0b11111000 | mode;
-//     }
-// }
