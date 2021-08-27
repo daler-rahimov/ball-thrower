@@ -85,7 +85,7 @@ private:
 	Motor *_upMotorThrower;
 	int _currentShot=-1;
 	double shotPowerInPersentile = 1.0;
-	uint8_t ballMotorPower = DCMotor::MAX_SPEED;
+	uint8_t ballMotorPower = Motor::MAX_SPEED;
 
 
 	/*!

@@ -10,18 +10,9 @@
 
 #define BOUD_RATE 115200
 
-// Motors 
-const double SHOTPOWER_PRESENTILE = 0.07; // Power of all shots 
-// motor one
-const uint8_t PWM_UP_MOTOR = 3;
-const uint8_t DIR_UP_MOTOR1 = A0;
-const uint8_t DIR_UP_MOTOR2 = A1;
-// motor two 
-const uint8_t PWM_DOWN_MOTOR = 4;
-const uint8_t DIR_DOWN_MOTOR1 = A4;
-const uint8_t DIR_DOWN_MOTOR2 = A5;
-
+// Motor 
 Thrower *thrower;
+const double SHOTPOWER_PRESENTILE = 0.07; // Power of all shots 
 
 // Computer cmds defines 
 #define CMD_SOH		0x01 
@@ -35,15 +26,15 @@ const char CMD_PER_POWER=	'p';
 
 // Result code defines 
 // NOTE: Do nat change the current order clients depend on it. Add new ones at the end 
-const byte OK =				 0;
-const byte ERROR =			 1;
-const byte NO_SUCK_SHOT =	 2;
-const byte CMD_INC_FORM =	 3;
-const byte PARTIAL_CMD =	 4;
-const byte MODE_NOT_SET =	 5;
-const byte NO_SUCH_CMD  =	 6;
-const byte NO_IMPLEMENT =	 7;
-const byte CMD_INC_VALUE=	 8;
+const byte OK =				  0;
+const byte ERROR =			 -1;
+const byte NO_SUCK_SHOT =	 -2;
+const byte CMD_INC_FORM =	 -3;
+const byte PARTIAL_CMD =	 -4;
+const byte MODE_NOT_SET =	 -5;
+const byte NO_SUCH_CMD  =	 -6;
+const byte NO_IMPLEMENT =	 -7;
+const byte CMD_INC_VALUE=	 -8;
 
 //Version 
 const char MAJOR =	'1';
@@ -55,28 +46,54 @@ byte verByte = atoi(verC);
 // ballThrower 
 Thrower::Constants nextMode = Thrower::E_Last;
 
-unsigned long time_now = 0;
-int period = 5;// period that is used to check if there is a new commands to execute 
-unsigned long time_last_mode_change = 0;
-
 void setup()
 {
 	Serial.begin(BOUD_RATE);
 	Serial.setTimeout(100);
     // Changed frequency 
-    setPwmFrequency(PWM_DOWN_MOTOR, 8);
-    setPwmFrequency(PWM_UP_MOTOR, 8);
+    // setPwmFrequency(PWM_DOWN_MOTOR, 8);
+    // setPwmFrequency(PWM_UP_MOTOR, 8);
 
+	// Motors 
+	
+	//************************************
+	// DCMotorDROKL298
+	//************************************
+	// // motor one
+	// const uint8_t PWM_UP_MOTOR = 3;
+	// const uint8_t DIR_UP_MOTOR1 = A0;
+	// const uint8_t DIR_UP_MOTOR2 = A1;
+	// // motor two 
+	// const uint8_t PWM_DOWN_MOTOR = 4;
+	// const uint8_t DIR_DOWN_MOTOR1 = A4;
+	// const uint8_t DIR_DOWN_MOTOR2 = A5;
+    // // set all the motor control pins to outputs
+    // pinMode(PWM_UP_MOTOR, OUTPUT);
+    // pinMode(PWM_DOWN_MOTOR, OUTPUT);
+    // pinMode(DIR_DOWN_MOTOR1, OUTPUT);
+    // pinMode(DIR_DOWN_MOTOR2, OUTPUT);
+    // pinMode(DIR_UP_MOTOR1, OUTPUT);
+    // pinMode(DIR_UP_MOTOR2, OUTPUT);
+	// DCMotorDROKL298 upMotor(PWM_UP_MOTOR, DIR_UP_MOTOR1, DIR_UP_MOTOR2);
+	// DCMotorDROKL298 downMotor(PWM_DOWN_MOTOR, DIR_DOWN_MOTOR1, DIR_DOWN_MOTOR2);
+
+	//***********************************
+	// DCMotorCytron
+	//***********************************
+	// motor one
+	const uint8_t PWM_UP_MOTOR = 3;
+	const uint8_t DIR_UP_MOTOR = A0;
+	// motor two 
+	const uint8_t PWM_DOWN_MOTOR = 4;
+	const uint8_t DIR_DOWN_MOTOR = A1;
     // set all the motor control pins to outputs
     pinMode(PWM_UP_MOTOR, OUTPUT);
     pinMode(PWM_DOWN_MOTOR, OUTPUT);
-    pinMode(DIR_DOWN_MOTOR1, OUTPUT);
-    pinMode(DIR_DOWN_MOTOR2, OUTPUT);
-    pinMode(DIR_UP_MOTOR1, OUTPUT);
-    pinMode(DIR_UP_MOTOR2, OUTPUT);
+    pinMode(DIR_DOWN_MOTOR, OUTPUT);
+    pinMode(DIR_UP_MOTOR, OUTPUT);
+	DCMotorCytron upMotor(PWM_UP_MOTOR, DIR_UP_MOTOR);
+	DCMotorCytron downMotor(PWM_DOWN_MOTOR, DIR_DOWN_MOTOR);
 
-	DCMotor upMotor(PWM_UP_MOTOR, DIR_UP_MOTOR1, DIR_UP_MOTOR2);
-	DCMotor downMotor(PWM_DOWN_MOTOR, DIR_DOWN_MOTOR1, DIR_DOWN_MOTOR2);
 
     thrower = new Thrower(upMotor, downMotor);
 	thrower->setShotPower(SHOTPOWER_PRESENTILE);
@@ -84,7 +101,7 @@ void setup()
 }
 
 
-const byte CMD_LENTH = 5; // TODO : remove 
+const byte CMD_LENTH = 5; // 
 char cmd[CMD_LENTH] = {NULL}; // all to 0 
 char nextCmd[CMD_LENTH-2] = {NULL};
 
@@ -92,7 +109,6 @@ void loop()
 {
 	thrower->playShot();
 	checkComputerCmd();
-	thrower->playShot();
 	doNextCmd();
 }
 
@@ -199,17 +215,20 @@ byte setCmd()
 		return OK;
 	} else if (nextCmd[1] == CMD_PER_POWER){// Set shot power  
 		double powerPerentile = double(nextCmd[2])/100.00;
-		if (powerPerentile < 0 || powerPerentile > 1 )
-			Serial.print(powerPerentile);
+		if (powerPerentile < 0 || powerPerentile > 1 ){
 			return CMD_INC_VALUE;
-		thrower->setShotPower(powerPerentile);
-		return OK;
+		}else{
+			thrower->setShotPower(powerPerentile);
+			return OK;
+		}
 	} else if (nextCmd[1] == CMD_PER_SPIN){// Set spin
 		double spinPerentile = double(nextCmd[2])/100.00;
-		if (spinPerentile < -1 || spinPerentile > 1 )
+		if (spinPerentile < -1 || spinPerentile > 1 ){
 			return CMD_INC_VALUE;
-		thrower->setSpin(spinPerentile);
-		return OK;
+		} else {
+			thrower->setSpin(spinPerentile);
+			return OK;
+		}
 	} else {
 		return NO_SUCH_CMD;
 	}

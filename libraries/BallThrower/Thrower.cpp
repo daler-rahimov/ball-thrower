@@ -28,7 +28,9 @@ void Thrower::setShotPower(double shotPowerPersentile = 1.0){
 		shotPowerPersentile = 0;
 	}
 	shotPowerInPersentile = shotPowerPersentile;
-	ballMotorPower = ballMotorPower * shotPowerPersentile;
+	ballMotorPower = _upMotorThrower->MAX_SPEED * shotPowerPersentile;
+	// incase setShot not called after setShotPower
+	setShot(_currentShot);
 }
 
 
@@ -73,9 +75,9 @@ bool Thrower::isModeImplemented(int shot) {
 
 int Thrower::setShot(int shot)
 {
-	if (_currentShot == shot){
-		return 0;
-	}else if(!isModeImplemented(shot)){ // not implemented yet modes 
+	// if (_currentShot == shot){
+	// 	return 0;
+	if(!isModeImplemented(shot)){ // not implemented yet modes 
 		return -1;
 	}else{// set correct shot 
 		switch (shot) {

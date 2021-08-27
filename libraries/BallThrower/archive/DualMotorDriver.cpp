@@ -8,8 +8,8 @@ DualMotorDriver::DualMotorDriver(uint8_t pwmDownPin,
                     uint8_t directionUpPin2
                     )
 {
-	_downMotorThrower = new DCMotor(pwmDownPin, directionDownPin1, directionDownPin2);
-	_upMotorThrower = new DCMotor(pwmUpPin, directionUpPin1, directionUpPin2);
+	_downMotorThrower = new DCMotorDROKL298(pwmDownPin, directionDownPin1, directionDownPin2);
+	_upMotorThrower = new DCMotorDROKL298(pwmUpPin, directionUpPin1, directionUpPin2);
 }
 
 DualMotorDriver::~DualMotorDriver()

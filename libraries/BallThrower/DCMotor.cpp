@@ -6,66 +6,133 @@
 #include "Arduino.h"
 #include "DCMotor.h"
 
-DCMotor::DCMotor(uint8_t pwmPin, uint8_t dirOut1Pin, uint8_t dirOut2Pin,bool isForwardDirection=true)
+//****************************************************
+// DCMotorDROKL298
+//****************************************************
+DCMotorDROKL298::DCMotorDROKL298(uint8_t pwmPin, uint8_t dirOut1Pin, uint8_t dirOut2Pin, 
+					bool isForwardDirection = true)
 {
 	pwm = pwmPin;
 	dirOut1 = dirOut1Pin;
 	dirOut2 = dirOut2Pin;
-	currentSpeed = 0; 
+	currentSpeed = 0;
 
 	// set all the motor control pins to outputs
 	pinMode(pwm, OUTPUT);
 	pinMode(dirOut1, OUTPUT);
 	pinMode(dirOut2, OUTPUT);
-	// turn forward or backward direction  
+	// turn forward or backward direction
 	setDirection(isForwardDirection);
 }
 
-DCMotor::~DCMotor()
+DCMotorDROKL298::~DCMotorDROKL298()
 {
 	stop();
 }
 
-void DCMotor::setDirection(bool isForward) {
-	// turn forward or backward direction  
-	if (isForward){
+void DCMotorDROKL298::setDirection(bool isForward)
+{
+	// turn forward or backward direction
+	if (isForward)
+	{
 		digitalWrite(dirOut1, HIGH);
 		digitalWrite(dirOut2, LOW);
-	}else{ 
+	}
+	else
+	{
 		digitalWrite(dirOut1, LOW);
 		digitalWrite(dirOut2, HIGH);
 	}
 }
 
-
-void DCMotor::stop() {
+void DCMotorDROKL298::stop()
+{
 	// turn off motors
 	digitalWrite(pwm, LOW);
 }
 
-
-void DCMotor::setSpeed(uint8_t speed) {
-	if (speed <= currentSpeed) {
+void DCMotorDROKL298::setSpeed(uint8_t speed)
+{
+	if (speed <= currentSpeed)
+	{
 		currentSpeed = speed;
-		analogWriteNoInterrupts(pwm, currentSpeed);
+		analogWrite(pwm, currentSpeed);
 	}
-	else { // speed up slowly so motor does not staul
+	else
+	{ // speed up slowly so motor does not staul
 		for (int i = currentSpeed; i <= speed; i++)
 		{
-			analogWriteNoInterrupts(pwm, i);
-			delay(20);
+			analogWrite(pwm, i);
+			delay(10);
 		}
 		currentSpeed = speed;
 	}
 }
 
-void DCMotor::run() {
-	analogWriteNoInterrupts(pwm, currentSpeed);
+void DCMotorDROKL298::run()
+{
+	setSpeed(currentSpeed);
 }
 
-void DCMotor::analogWriteNoInterrupts(uint8_t pin, int val){
-	noInterrupts();
-	analogWrite(pwm, currentSpeed);
-	interrupts();
+//****************************************************
+// DCMotorCytron
+//****************************************************
+DCMotorCytron::DCMotorCytron(uint8_t pwmPin, uint8_t dirOutPin, bool isForwardDirection = true)
+{
+	pwm = pwmPin;
+	dirOut = dirOutPin;
+	currentSpeed = 0;
+
+	// set all the motor control pins to outputs
+	pinMode(pwm, OUTPUT);
+	pinMode(dirOut, OUTPUT);
+	// turn forward or backward direction
+	setDirection(isForwardDirection);
 }
 
+DCMotorCytron::~DCMotorCytron()
+{
+	stop();
+}
+
+void DCMotorCytron::setDirection(bool isForward)
+{
+	// turn forward or backward direction
+	if (isForward)
+	{
+		digitalWrite(dirOut, HIGH);
+	}
+	else
+	{
+		digitalWrite(dirOut, LOW);
+	}
+}
+
+void DCMotorCytron::stop()
+{
+	// turn off motors
+	digitalWrite(pwm, LOW);
+}
+
+void DCMotorCytron::setSpeed(uint8_t speed)
+{
+	if (speed <= currentSpeed)
+	{
+		currentSpeed = speed;
+		analogWrite(pwm, currentSpeed);
+	}
+	else
+	{ // speed up slowly so motor does not staul
+		for (int i = currentSpeed; i <= speed; i++)
+		{
+			analogWrite(pwm, i);
+			delay(10);
+		}
+		currentSpeed = speed;
+	}
+}
+
+void DCMotorCytron::run()
+{
+	setSpeed(currentSpeed);
+}

@@ -1,19 +1,21 @@
 
 
-# AT Commands 
------------------
+AT Commands 
+=======================
 
 ## Serial properties
+```
 BoudRate = 115200
 Parity 	 = None 
 DataBits = 8 
 StopBits = None 
 Handshake= None 
+```
 
 ## Command Syntax  
 ### Computer parameter type commands:
 ```SOH|CMD|ETX``` 
-
+```
 Where 
 	SOH is a control-A character (ASCII 01).
 	ETX to be a Control-C chracter (ASCII 01). 
@@ -22,60 +24,59 @@ Where
 		1st byte - command prefix. E.g 'g'-for get and 's'-for set  
 		2nd byte - command name. E.g. 'p'- for shot power. Anything for other (e.g. version)
 		3rd bype - command value. E.g. '100'- 100% 	
+```
 
-E.g. 
-```SOH|sm2|ETX``` -	Set mode to 2 
+Examples: </br> 
 ```SOH|v0|ETX``` - get version number  
 
-For RealTerm 
-<!-- ```0x01 0x6d 0x07 0x03```  -->
-0x07 is the mode number 
+For RealTerm: </br>
+<`0x01 0x73 0x70 0x60 0x03`> - set "shot power" to 0x60 
 
 
-#### Commands 
-cmds are **Case sensetive**
-`SOH+CMD+ETX`
-```
-CDMs: 
-v	        		Get version. 
-sm<mode_num>		Set mode to <mode_num> 
-ss<spin>			Set spin in presentage from -100 (100% backspin) +100 (100% topspin). <spin> in **BYTE**
-sp<shot_power>		Set shot power (0 to 100 persentage). <shot_power> in **BYTE**
-gs					Get spin from -100 (100% backspin) +100 (100% topspin).
-gp					Get shot power (0 to 100 persentage). 
-```
+### Commands 
+All commands are **Case sensetive**
+
+| Command | Description |
+| --- | --- |
+| `v` | Get version. |
+| `sm<mode_num>` | Set mode to <mode_num>. |
+| `ss<spin>` | Set spin in presentage from -100 (100% backspin) +100 (100% topspin). <spin> in **BYTE** |
+| `sp<shot_power>` | Set shot power (0 to 100 persentage). <shot_power> in **BYTE**| 
+| `gs` | Get spin from -100 (100% backspin) +100 (100% topspin).| 
+| `gp` | Get shot power (0 to 100 persentage).|
 
 List of Modes
 ```
-		FLAT_SHOT =		 		 1,
-		TOPSPIN_SHOT =			 2,
-		DROP_SHOT =				 3,
-		PASSING_SHOT =			 4,
-		SLICE_SHOT =			 5,
-		LOB_SHOT =			 	 6,
-		SERVE_SHOT =			 7,
-		STOP_SHOT = 			 8, 
+	FLAT_SHOT =		 		 1,
+	TOPSPIN_SHOT =			 2,
+	DROP_SHOT =				 3,
+	PASSING_SHOT =			 4,
+	SLICE_SHOT =			 5,
+	LOB_SHOT =			 	 6,
+	SERVE_SHOT =			 7,
+	STOP_SHOT = 			 8, 
 
 ```
 
-#### Result Codes. For "Numeric form" one byte with result code returned
+#### Result Codes. 
+API return int8 (a byte) for all calls. All error are negative number and values are positive. If '0' it can be OK for setters or value for getters. 
 
 | Numeric form | Verbose form             |
 |--------------|--------------------------|
 | 0            | OK                       |
-| 1            | ERROR                    |
-| 2            | NO_SUCK_MODE             |
-| 3            | CMD_INC_FORM             |
-| 4            | PARTIAL_CMD              |
-| 5            | MODE_NOT_SET             |
-| 6            | NO_SUCH_CMD              |
-| 7            | NO_IMPLEMENT             |
+|-1            | ERROR                    |
+|-2            | NO_SUCK_MODE             |
+|-3            | CMD_INC_FORM             |
+|-4            | PARTIAL_CMD              |
+|-5            | MODE_NOT_SET             |
+|-6            | NO_SUCH_CMD              |
+|-7            | NO_IMPLEMENT             |
 
 
 
-# Installation
+Installation
+=================
 
------------------
 ### Installation from deb repo 
 ```
 sudo -s
@@ -87,9 +88,9 @@ apt-get install ball-thrower
 
 
 
-# Avrdude cmds 
+Avrdude cmds 
+=================
 
--------------
 ### Find serial USB port if connected  
 ```
 ls /dev/serial/by-path/
@@ -111,9 +112,9 @@ avrdude-original -v -p atmega2560 -c wiring -P /dev/ttyS5 -b 115200 -D -U flash:
 ```
 
 
-# UP Square 
+UP Square
+=====================
 
------------
 ### UART
 #### To identify the tty device node number in Linux corresponding to a particular hardware uart open a terminal and execute the following command
 

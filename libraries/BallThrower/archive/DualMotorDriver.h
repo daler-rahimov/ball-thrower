@@ -49,8 +49,8 @@ public:
 
 
 private:
-    DCMotor *_downMotorThrower;
-    DCMotor *_upMotorThrower;
+    DCMotorDROKL298 *_downMotorThrower;
+    DCMotorDROKL298 *_upMotorThrower;
 };
 
 #endif

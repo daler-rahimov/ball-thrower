@@ -20,7 +20,12 @@ class Motor{
 		virtual void run();
 };
 
-class DCMotor: public Motor
+
+/**
+ * This class is spesific for DC Motor Driver, DROK L298 Dual H Bridge Motor 
+ * Speed Controller DC 6.5V
+ */
+class DCMotorDROKL298: public Motor
 {
 public:
 	uint8_t currentSpeed;
@@ -33,8 +38,8 @@ public:
 		@note 	This is for specific controller that has 2 control pins for direction control 
 		for each motor. 
 	*/
-	DCMotor(uint8_t pwmPin, uint8_t dirOut1Pin, uint8_t dirOut2Pin,bool isForwardDirection=true);
-	~DCMotor();
+	DCMotorDROKL298(uint8_t pwmPin, uint8_t dirOut1Pin, uint8_t dirOut2Pin,bool isForwardDirection=true);
+	~DCMotorDROKL298();
 	void setSpeed(uint8_t speed);
 	void setDirection(bool isForward);
 	void stop();
@@ -45,6 +50,35 @@ private:
 	uint8_t pwm;
 	uint8_t dirOut1;
 	uint8_t dirOut2;
+};
+
+
+/**
+ * This class is spesific for DC Motor Driver, Cytron 10A Dual Channel Bi-Directional DC 
+ * Motor Driver
+ */
+class DCMotorCytron: public Motor
+{
+public:
+	uint8_t currentSpeed;
+
+	/*!
+		@brief	Constructor  
+		@param	pwmPin PWM pin number used to comunicate with a motor driver 
+		@param	dirOutPin Direction pin  
+		@note 	This is for specific controller that has 1 control pins per motor 
+	*/
+	DCMotorCytron(uint8_t pwmPin, uint8_t dirOutPin, bool isForwardDirection=true);
+	~DCMotorCytron();
+	void setSpeed(uint8_t speed);
+	void setDirection(bool isForward);
+	void stop();
+	void run();
+	void analogWriteNoInterrupts(uint8_t pin, int val);
+
+private:
+	uint8_t pwm;
+	uint8_t dirOut;
 };
 
 

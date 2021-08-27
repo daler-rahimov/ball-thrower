@@ -11,7 +11,7 @@
 const uint8_t PWM_MOTOR1 = 3;
 const uint8_t DIR1_MOTOR1 = A0;
 const uint8_t DIR2_MOTOR2 = A1;
-DCMotor* motor1;
+DCMotorDROKL298* motor1;
 
 void setup()
 {
@@ -25,7 +25,7 @@ void setup()
     pinMode(DIR1_MOTOR1, OUTPUT);
     pinMode(DIR2_MOTOR2, OUTPUT);
 
-	motor1 = new DCMotor(PWM_MOTOR1, DIR1_MOTOR1, DIR2_MOTOR2);
+	motor1 = new DCMotorDROKL298(PWM_MOTOR1, DIR1_MOTOR1, DIR2_MOTOR2);
     motor1->setSpeed(40);
 }
 
