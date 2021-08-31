@@ -47,12 +47,12 @@ All commands are **Case sensetive**
 
 List of Modes
 ```
-	FLAT_SHOT =		 		 1,
+	FLAT_SHOT =			 1,
 	TOPSPIN_SHOT =			 2,
-	DROP_SHOT =				 3,
+	DROP_SHOT =			 3,
 	PASSING_SHOT =			 4,
 	SLICE_SHOT =			 5,
-	LOB_SHOT =			 	 6,
+	LOB_SHOT =			 6,
 	SERVE_SHOT =			 7,
 	STOP_SHOT = 			 8, 
 
