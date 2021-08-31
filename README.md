@@ -79,11 +79,7 @@ Installation
 
 ### Installation from deb repo 
 ```
-sudo -s
-echo "deb [arch=amd64] https://dcapp:0pend0wn@apt-petrosoftinc.com/dcapp/ xenial depends devel" > /etc/apt/sources.list.d/act_modules.list
-wget -O - https://apt-petrosoftinc.com/repo-data/dcapp.gpg | apt-key add -
-apt-get update
-apt-get install ball-thrower 
+
 ```
 
 
